@@ -344,6 +344,11 @@ export async function getBilibiliSongUrl(trackId: string): Promise<{
     return getBilibiliSongUrlWeb(parsed.bvid, parsed.cid);
   }
 
+  // Android端：使用本地代理；iOS 无本地代理插件，走后端代理（同 Web 路径，URL 由 getApiUrl 拼接）
+  if (!config.IS_ANDROID) {
+    return getBilibiliSongUrlWeb(parsed.bvid, parsed.cid);
+  }
+
   // Android端：使用本地代理
   return getBilibiliSongUrlNative(parsed.bvid, parsed.cid);
 }
