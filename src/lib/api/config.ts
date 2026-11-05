@@ -2,7 +2,8 @@ import { Capacitor } from "@capacitor/core";
 import type { ApiResponse } from "@otter-music/shared";
 
 export const IS_NATIVE = Capacitor.isNativePlatform();
-export const IS_ANDROID = Capacitor.getPlatform() === "android";
+// 可选调用：部分测试 mock 只提供 isNativePlatform，缺 getPlatform 时按非安卓处理
+export const IS_ANDROID = Capacitor.getPlatform?.() === "android";
 
 const getDefaultApiUrl = () => "https://otter-music.pages.dev";
 
