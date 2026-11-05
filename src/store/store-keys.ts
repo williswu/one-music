@@ -14,4 +14,5 @@ export enum storeKey {
   OfflineStore = "oh_offline_store",
   UrlCacheStore = "oh_url_cache_store",
   WebdavStore = "oh_webdav_store",
+  AccountStore = "oh_account_store",
 }

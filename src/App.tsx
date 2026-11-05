@@ -12,18 +12,25 @@ import { App as CapacitorApp } from "@capacitor/app";
 import { IS_NATIVE } from "@/lib/api/config";
 import { preloadRouteChunks } from "@/routes/preload";
 import { applyTopSafeAreaFallback } from "@/lib/safe-area";
+import { restoreAccountSession, useAccountStore } from "@/store/account-store";
 export default function App() {
-  // Sync Logic
+  // Sync Logic：等账号会话恢复完成再自动同步，避免用过期 syncKey 抢先同步
   const { syncKey } = useSyncStore();
+  const accountRestored = useAccountStore((s) => s.restored);
   const syncInProgress = useRef(false);
   useEffect(() => {
+    if (!accountRestored) return;
     if (syncKey && !syncInProgress.current) {
       syncInProgress.current = true;
       checkAndSync().finally(() => {
         syncInProgress.current = false;
       });
     }
-  }, [syncKey]);
+  }, [syncKey, accountRestored]);
+
+  useEffect(() => {
+    restoreAccountSession();
+  }, []);
 
   useEffect(() => {
     // Android 14 及以下没有原生注入的安全区，这里按系统栏占用补一个顶部兜底值

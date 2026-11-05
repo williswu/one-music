@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-Otter Music 是一款 Capacitor 混合架构音乐播放器。当前仅面向 Android 原生端；代码中的 Web 分支（`IS_NATIVE` 判断）属历史遗留，新增功能只考虑 Android 端。
+One Music（原 Otter Music）是一款 Capacitor 混合架构音乐播放器，原生端覆盖 Android 与 iOS。Android 专属插件（LocalMusic/DesktopLyric/AudioRoute/WebViewLogin/BilibiliProxy）无 iOS 实现，调用前须过 `IS_NATIVE` 或方法探测守卫；iOS 平台判断用 `IS_ANDROID`（src/lib/api/config.ts）。
 
 ## 架构概览
 

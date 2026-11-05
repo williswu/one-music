@@ -6,6 +6,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { QualitySelect } from "./settings/QualitySelect";
 import { AggregatedSourceSelect } from "./settings/AggregatedSourceSelect";
 import { SyncConfig } from "./settings/SyncConfig";
+import { AccountConfig } from "./settings/AccountConfig";
 import { NeteaseLogin } from "./settings/NeteaseLogin";
 import { QqMusicLogin } from "./settings/QqMusicLogin";
 import { BilibiliLogin } from "./settings/BilibiliLogin";
@@ -169,6 +170,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           <NeteaseLogin />
           <QqMusicLogin />
           <BilibiliLogin />
+          <AccountConfig />
           <SyncConfig />
           <SettingItem
             icon={Database}

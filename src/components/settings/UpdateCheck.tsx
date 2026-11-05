@@ -37,11 +37,11 @@ export function UpdateDialog({ open, onOpenChange }: UpdateDialogProps) {
         <DrawerHeader className="items-center pt-4">
           <img
             src="/favicon.svg"
-            alt="Otter Music"
+            alt="One Music"
             className="w-16 h-16 rounded-xl shadow"
           />
           <DrawerTitle className="text-xl font-bold mt-2">
-            Otter Music
+            One Music
           </DrawerTitle>
           <div className="text-xs font-mono text-muted-foreground">
             {currentVersion}

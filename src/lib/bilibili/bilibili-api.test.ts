@@ -9,6 +9,7 @@ beforeEach(() => {
     fetchWithTimeout: vi.fn(),
     getApiUrl: vi.fn().mockReturnValue("https://otter-music.pages.dev"),
     IS_NATIVE: false,
+    IS_ANDROID: false,
   };
   mockCapacitor = {
     Capacitor: { isNativePlatform: vi.fn() },
@@ -140,6 +141,7 @@ describe("getBilibiliSongUrl", () => {
         }),
       });
     mockConfig.IS_NATIVE = true;
+    mockConfig.IS_ANDROID = true;
     mockCapacitor.Capacitor.isNativePlatform.mockReturnValue(true);
     mockConfig.getApiUrl.mockReturnValue("https://otter-music.pages.dev");
     mockConfig.fetchWithTimeout.mockReset();
@@ -182,6 +184,7 @@ describe("getBilibiliSongUrl", () => {
         }),
       });
     mockConfig.IS_NATIVE = true;
+    mockConfig.IS_ANDROID = true;
     mockCapacitor.Capacitor.isNativePlatform.mockReturnValue(true);
     mockConfig.getApiUrl.mockReturnValue("https://otter-music.pages.dev");
     mockConfig.fetchWithTimeout.mockReset();
@@ -191,6 +194,40 @@ describe("getBilibiliSongUrl", () => {
     await expect(
       getBilibiliSongUrl("bilibili_BV1xx411c7mD")
     ).resolves.toBeNull();
+  });
+
+  it("uses backend proxy url on iOS (native but not android)", async () => {
+    mockCapacitor.CapacitorHttp.request
+      .mockResolvedValueOnce({
+        status: 200,
+        data: JSON.stringify({
+          code: 0,
+          data: { pages: [{ cid: 62131 }] },
+        }),
+      })
+      .mockResolvedValueOnce({
+        status: 200,
+        data: JSON.stringify({
+          code: 0,
+          data: {
+            dash: {
+              audio: [{ baseUrl: "https://example.com/audio.m4s" }],
+            },
+          },
+        }),
+      });
+    mockConfig.IS_NATIVE = true;
+    mockConfig.IS_ANDROID = false;
+    mockCapacitor.Capacitor.isNativePlatform.mockReturnValue(true);
+    mockConfig.getApiUrl.mockReturnValue("https://otter-music.pages.dev");
+
+    const { getBilibiliSongUrl } = await import("./bilibili-api");
+
+    await expect(getBilibiliSongUrl("bilibili_BV1xx411c7mD")).resolves.toEqual({
+      url: "https://otter-music.pages.dev/music-api/bilibili/audio?bvid=BV1xx411c7mD&url=https%3A%2F%2Fexample.com%2Faudio.m4s",
+      format: "m4a",
+    });
+    expect(mockBilibiliProxy.getProxyUrl).not.toHaveBeenCalled();
   });
 
   it("resolves dev song urls through view and playurl", async () => {

@@ -1,1 +1,17 @@
-<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1772259507862" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6103" width="256" height="256" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M405.333333 704m-192 0a192 192 0 1 0 384 0 192 192 0 1 0-384 0Z" fill="#00CC98" p-id="6104"></path><path d="M512 128v576h85.333333V298.666667l234.666667 64v-149.333334z" fill="#00CC98" p-id="6105"></path></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FC3C44"/>
+      <stop offset="0.5" stop-color="#E8365F"/>
+      <stop offset="1" stop-color="#FA2D8D"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="228" fill="url(#g)"/>
+  <g fill="#fff">
+    <circle cx="420" cy="706" r="146"/>
+    <rect x="516" y="212" width="52" height="500" rx="26"/>
+    <path d="M568 212c0-14 14-24 30-20l140 40c12 4 20 15 20 27v240c0 10-12 16-20 10l-170-120z"/>
+    <!-- "1" negative space in note head -->
+    <path d="M368 640l50-32h28v176h-42V660l-36 20z" fill="url(#g)"/>
+  </g>
+</svg>
