@@ -1,9 +1,9 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { storeKey } from './store-keys';
-import { idbStorage } from '@/lib/storage-adapter';
-import type { MusicTrack } from '@/types/music';
-import { cleanTrack } from '@/lib/utils/music';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { storeKey } from "./store-keys";
+import { idbStorage } from "@/lib/storage-adapter";
+import type { MusicTrack } from "@/types/music";
+import { cleanTrack } from "@/lib/utils/music";
 
 const MAX_HISTORY = 100;
 
@@ -19,15 +19,21 @@ export const useHistoryStore = create<HistoryState>()(
     (set) => ({
       history: [],
 
-      addToHistory: (track) => set((state) => {
-        const filtered = state.history.filter(t => t.id !== track.id);
-        const newHistory = [track, ...filtered];
-        return { history: newHistory.slice(0, MAX_HISTORY) };
-      }),
+      addToHistory: (track) =>
+        set((state) => {
+          const filtered = state.history.filter((t) => t.id !== track.id);
+          // update_time 供同步 LWW 合并使用；重复播放刷新时间戳
+          const newHistory = [
+            { ...track, update_time: Date.now() },
+            ...filtered,
+          ];
+          return { history: newHistory.slice(0, MAX_HISTORY) };
+        }),
 
-      removeFromHistory: (trackId) => set((state) => ({
-        history: state.history.filter(t => t.id !== trackId)
-      })),
+      removeFromHistory: (trackId) =>
+        set((state) => ({
+          history: state.history.filter((t) => t.id !== trackId),
+        })),
 
       clearHistory: () => set({ history: [] }),
     }),

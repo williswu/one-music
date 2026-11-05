@@ -5,10 +5,11 @@ import { Env } from "../types/hono";
 const app = new Hono<{ Bindings: Env }>();
 
 const GITHUB_API_URL =
-  "https://api.github.com/repos/DJChanahCJD/otter-music/releases/latest";
+  "https://api.github.com/repos/williswu/one-music/releases/latest";
 
 interface GitHubRelease {
   tag_name: string;
+  html_url: string;
   body: string;
   published_at: string;
   assets: {
@@ -34,16 +35,16 @@ app.get("/check", async (c) => {
   try {
     const release: GitHubRelease = await fetchRelease(c.env.GITHUB_TOKEN);
 
+    // iOS 端 release 没有 apk 资产，回退到 release 页面链接
     const apk = release.assets.find((a) => a.name.endsWith(".apk"));
-    if (!apk) return fail(c, "No APK found", 404);
 
     const updateInfo: UpdateInfo = {
       latestVersion: release.tag_name,
       changelog: release.body,
-      downloadUrl: buildProxyUrl(c.req.url, apk),
-      directUrl: apk.browser_download_url,
+      downloadUrl: apk ? buildProxyUrl(c.req.url, apk) : release.html_url,
+      directUrl: apk ? apk.browser_download_url : release.html_url,
       publishDate: release.published_at,
-      size: apk.size,
+      size: apk?.size ?? 0,
     };
 
     return ok(c, updateInfo);

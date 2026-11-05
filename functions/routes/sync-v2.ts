@@ -97,7 +97,8 @@ const sanitizeObj = (v: any): SyncRecord | null =>
 const sanitizeList = <T>(v: any): T[] =>
   Array.isArray(v) ? (v.map(sanitizeObj).filter(Boolean) as T[]) : [];
 
-// 保证 favorites / playlists 结构完整
+// 保证 favorites / playlists / history 结构完整
+const HISTORY_MAX = 100;
 const formatData = (v: any) => ({
   ...(v || {}),
   favorites: sanitizeList<SyncRecord>(v?.favorites),
@@ -105,6 +106,7 @@ const formatData = (v: any) => ({
     ...p,
     tracks: sanitizeList<SyncRecord>(p.tracks),
   })),
+  history: sanitizeList<SyncRecord>(v?.history),
 });
 
 // 清理超过 TTL 的墓碑记录
@@ -149,6 +151,10 @@ const getFingerprint = (d: ReturnType<typeof formatData>): string => {
     for (const t of p.tracks) {
       if (t.update_time > maxT) maxT = t.update_time;
     }
+  }
+  for (const h of d.history) {
+    count += 1;
+    if (h.update_time > maxT) maxT = h.update_time;
   }
   return `${count}:${maxT}`;
 };
@@ -261,6 +267,10 @@ syncRoutesV2.post(
       ...client,
       favorites: mergeLWW(serverData.favorites, client.favorites),
       playlists: mergeLWW(serverData.playlists, client.playlists),
+      // 历史按播放时间倒序，合并后截断到上限
+      history: mergeLWW(serverData.history, client.history)
+        .sort((a, b) => b.update_time - a.update_time)
+        .slice(0, HISTORY_MAX),
     };
 
     const newVersion = (metadata?.version ?? 0) + 1;

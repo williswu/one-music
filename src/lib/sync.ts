@@ -2,13 +2,18 @@ import toast from "react-hot-toast";
 import { ApiError } from "@/lib/api/config";
 import { useSyncStore } from "@/store/sync-store";
 import { useMusicStore } from "@/store";
+import { useHistoryStore } from "@/store/history-store";
 import { syncPull, syncPushAndPull } from "@/lib/api/sync";
 import { MusicTrack, Playlist } from "@/types/music";
 import { cleanTrack } from "@/lib/utils/music";
 import { logger } from "./logger";
 
 /** --- 类型定义 --- */
-type SyncSnapshot = { favorites: MusicTrack[]; playlists: Playlist[] };
+type SyncSnapshot = {
+  favorites: MusicTrack[];
+  playlists: Playlist[];
+  history: MusicTrack[];
+};
 export type SyncResult = {
   success: boolean;
   error?: string;
@@ -26,6 +31,7 @@ const getSnapshot = (): SyncSnapshot => {
       ...p,
       tracks: p.tracks.map(cleanTrack),
     })),
+    history: useHistoryStore.getState().history.map(cleanTrack),
   };
 };
 
@@ -34,6 +40,9 @@ const applySnapshot = (data: SyncSnapshot) => {
     favorites: data.favorites ?? [],
     playlists: data.playlists ?? [],
   });
+  if (data.history) {
+    useHistoryStore.setState({ history: data.history });
+  }
 };
 
 /** LWW 合并：相同 id 保留 update_time 更大的版本，新增条目排在前 */
@@ -70,6 +79,10 @@ function mergeSnapshots(
       }
       return p;
     }),
+    // 历史按播放时间倒序，合并后截断到上限
+    history: mergeTracks(server.history ?? [], local.history ?? [])
+      .sort((a, b) => (b.update_time ?? 0) - (a.update_time ?? 0))
+      .slice(0, 100),
   };
 }
 

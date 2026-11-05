@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { ApiError } from "@/lib/api/config";
 import { useMusicStore } from "@/store";
 import { useSyncStore } from "@/store/sync-store";
+import { useHistoryStore } from "@/store/history-store";
 import { syncPull, syncPushAndPull } from "@/lib/api/sync";
 import { checkAndSync } from "./sync";
 import type { MusicTrack } from "@/types/music";
@@ -59,6 +60,7 @@ const setupBaseState = () => {
     favorites: [],
     playlists: [],
   });
+  useHistoryStore.setState({ history: [] });
 };
 
 const successResponse = (data: unknown, overrides = {}) => ({
@@ -138,6 +140,78 @@ describe("checkAndSync", () => {
       "sync-key",
       expect.anything(),
       3 // clientVersion
+    );
+  });
+
+  it("pushes local history and applies server history", async () => {
+    useHistoryStore.setState({
+      history: [createTrack("h-local")],
+    });
+    vi.mocked(syncPushAndPull).mockResolvedValue(
+      successResponse({
+        favorites: [],
+        playlists: [],
+        history: [createTrack("h-remote")],
+      })
+    );
+
+    await checkAndSync();
+
+    // 推送快照包含本地历史
+    expect(syncPushAndPull).toHaveBeenCalledWith(
+      "sync-key",
+      expect.objectContaining({
+        history: expect.arrayContaining([
+          expect.objectContaining({ id: "h-local" }),
+        ]),
+      }),
+      expect.anything()
+    );
+    // 服务端权威历史写回本地
+    expect(useHistoryStore.getState().history).toEqual([
+      expect.objectContaining({ id: "h-remote" }),
+    ]);
+  });
+
+  it("409 recovery merges history by update_time desc, capped at 100", async () => {
+    useHistoryStore.setState({
+      history: [
+        { ...createTrack("h-old"), update_time: NOW - 5000 },
+        { ...createTrack("h-new"), update_time: NOW - 1000 },
+      ],
+    });
+
+    vi.mocked(syncPushAndPull)
+      .mockRejectedValueOnce(new ApiError("version conflict", 409))
+      .mockResolvedValueOnce(
+        successResponse(
+          { favorites: [], playlists: [], history: [] },
+          { version: 2 }
+        )
+      );
+    vi.mocked(syncPull).mockResolvedValue(
+      successResponse(
+        {
+          favorites: [],
+          playlists: [],
+          history: [{ ...createTrack("h-server"), update_time: NOW - 3000 }],
+        },
+        { version: 1 }
+      )
+    );
+
+    await checkAndSync();
+
+    expect(syncPushAndPull).toHaveBeenLastCalledWith(
+      "sync-key",
+      expect.objectContaining({
+        history: [
+          expect.objectContaining({ id: "h-new" }),
+          expect.objectContaining({ id: "h-server" }),
+          expect.objectContaining({ id: "h-old" }),
+        ],
+      }),
+      expect.anything()
     );
   });
 
