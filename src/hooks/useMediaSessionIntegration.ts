@@ -11,6 +11,9 @@ import { logger } from "@/lib/logger";
 
 const artworkCache = new Map<string, boolean>();
 
+/** 锁屏/灵动岛快进快退的默认步长（秒），与 iOS 系统默认一致 */
+const SEEK_STEP_SECONDS = 15;
+
 /**
  * 通知栏上的自定义按钮，不属于 MediaSession 标准动作，需要插件原生支持。
  * - like：喜欢 / 取消喜欢，图标随收藏状态切换
@@ -245,6 +248,25 @@ export function useMediaSessionIntegration(
           if (details?.seekTime !== undefined && details?.seekTime !== null) {
             useMusicStore.getState().seek(details.seekTime);
           }
+        },
+      ],
+      // 锁屏/灵动岛的快进快退按钮：iOS 默认步长 15s，Android 通知栏同样映射到这两个动作
+      [
+        "seekforward",
+        () => {
+          const { currentAudioTime, duration, seek } = useMusicStore.getState();
+          const target = Math.min(
+            currentAudioTime + SEEK_STEP_SECONDS,
+            duration > 0 ? duration : currentAudioTime + SEEK_STEP_SECONDS
+          );
+          seek(target);
+        },
+      ],
+      [
+        "seekbackward",
+        () => {
+          const { currentAudioTime, seek } = useMusicStore.getState();
+          seek(Math.max(currentAudioTime - SEEK_STEP_SECONDS, 0));
         },
       ],
     ];

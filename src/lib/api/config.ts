@@ -5,7 +5,7 @@ export const IS_NATIVE = Capacitor.isNativePlatform();
 // 可选调用：部分测试 mock 只提供 isNativePlatform，缺 getPlatform 时按非安卓处理
 export const IS_ANDROID = Capacitor.getPlatform?.() === "android";
 
-const getDefaultApiUrl = () => "https://otter-music.pages.dev";
+const getDefaultApiUrl = () => "https://one-music-763.pages.dev";
 
 const STORAGE_KEY_CUSTOM_API_URL = "otter_custom_api_url";
 

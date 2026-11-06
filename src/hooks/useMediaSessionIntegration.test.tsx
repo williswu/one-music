@@ -300,4 +300,74 @@ describe("useMediaSessionIntegration", () => {
       cleanup();
     });
   });
+
+  describe("锁屏/灵动岛快进快退", () => {
+    const seekHandlerFor = (action: string) => {
+      const call = mediaSessionMocks.setActionHandler.mock.calls.find(
+        (c) => c[0].action === action
+      );
+      return call?.[1] as
+        | ((details?: { seekTime?: number | null }) => void)
+        | undefined;
+    };
+
+    const setupSeekState = () => {
+      useMusicStore.setState({
+        queue: [
+          {
+            id: "s1",
+            name: "S",
+            artist: ["A"],
+            album: "Al",
+            pic_id: "p",
+            url_id: "u",
+            lyric_id: "l",
+            source: "netease",
+          },
+        ],
+        currentIndex: 0,
+        currentAudioTime: 60,
+        duration: 180,
+        seekTargetTime: -1,
+      });
+    };
+
+    it("注册 seekforward 与 seekbackward 动作", async () => {
+      const cleanup = await renderHook(null);
+
+      expect(
+        mediaSessionMocks.setActionHandler.mock.calls.map((c) => c[0].action)
+      ).toEqual(expect.arrayContaining(["seekforward", "seekbackward"]));
+
+      cleanup();
+    });
+
+    it("快进 15 秒，不超过时长", async () => {
+      const cleanup = await renderHook(null);
+      setupSeekState();
+
+      act(() => seekHandlerFor("seekforward")?.());
+      expect(useMusicStore.getState().seekTargetTime).toBe(75);
+
+      useMusicStore.setState({ currentAudioTime: 175 });
+      act(() => seekHandlerFor("seekforward")?.());
+      expect(useMusicStore.getState().seekTargetTime).toBe(180);
+
+      cleanup();
+    });
+
+    it("快退 15 秒，不早于 0", async () => {
+      const cleanup = await renderHook(null);
+      setupSeekState();
+
+      act(() => seekHandlerFor("seekbackward")?.());
+      expect(useMusicStore.getState().seekTargetTime).toBe(45);
+
+      useMusicStore.setState({ currentAudioTime: 5 });
+      act(() => seekHandlerFor("seekbackward")?.());
+      expect(useMusicStore.getState().seekTargetTime).toBe(0);
+
+      cleanup();
+    });
+  });
 });
