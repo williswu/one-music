@@ -11,6 +11,18 @@ import { logger } from "@/lib/logger";
 
 type ProviderResolver = (source: MusicSource) => IMusicProvider;
 
+/**
+ * 单个音源的搜索兜底超时。CapacitorHttp 原生请求不遵守 AbortSignal，
+ * 个别站点（如 B 站风控挂起）会让 promise 永不 settle，
+ * 若不设兜底会拖死整个 Promise.all，聚合搜索一直转圈。
+ */
+const PROVIDER_SEARCH_TIMEOUT_MS = 12000;
+
+const EMPTY_PAGE: SearchPageResult<MusicTrack> = {
+  items: [],
+  hasMore: false,
+};
+
 export class AggregateProvider implements IMusicProvider {
   source = "aggregate" as const;
   constructor(
@@ -28,12 +40,30 @@ export class AggregateProvider implements IMusicProvider {
     const aggregatedSources = this.getSources();
 
     const results = await Promise.all(
-      aggregatedSources.map((s) => {
+      aggregatedSources.map(async (s) => {
+        let timer: ReturnType<typeof setTimeout> | undefined;
         try {
-          return this.resolver(s).search(query, page, count, signal, intent);
+          const search = this.resolver(s).search(
+            query,
+            page,
+            count,
+            signal,
+            intent
+          );
+          const timeout = new Promise<SearchPageResult<MusicTrack>>(
+            (resolve) => {
+              timer = setTimeout(
+                () => resolve(EMPTY_PAGE),
+                PROVIDER_SEARCH_TIMEOUT_MS
+              );
+            }
+          );
+          return await Promise.race([search, timeout]);
         } catch (e) {
           logger.warn("AggregateProvider", `Search failed for ${s}`, e);
-          return Promise.resolve({ items: [], hasMore: false });
+          return EMPTY_PAGE;
+        } finally {
+          clearTimeout(timer);
         }
       })
     );
